@@ -87,3 +87,9 @@ On Mac OS X pngquant can use Cocoa framework to load images. This enables
 support for color profiles and other input file formats. Images will have
 slightly reduced fidelity of alpha channel, since Cocoa uses premultiplied
 alpha.
+
+##Compilation with Cocoa image reader and PDF support
+
+     $ make USE_COCOA=1 SUPPORT_PDF=1
+
+As above, but also supports PDF as input format.

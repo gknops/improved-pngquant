@@ -33,6 +33,10 @@ OBJS += $(COCOA_OBJS)
 FRAMEWORKS += -framework Cocoa
 endif
 
+ifdef SUPPORT_PDF
+CFLAGS += -DSUPPORT_PDF=1
+endif
+
 BUILD_CONFIGURATION="$(CC) $(CFLAGS) $(LDFLAGS)"
 
 all: $(BIN)

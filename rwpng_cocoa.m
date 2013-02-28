@@ -20,7 +20,16 @@ int rwpng_read_image24_cocoa(FILE *fp, png24_image *out)
         NSFileHandle *fh = [[NSFileHandle alloc] initWithFileDescriptor:fileno(fp)];
         NSData *data = [fh readDataToEndOfFile];
         out->file_size = [data length];
+        
+        #ifdef SUPPORT_PDF
+        NSImage			*src=[[NSImage alloc]initWithData:data];
+        NSData			*imgData=[src TIFFRepresentation];
+        CGImageRef image = [[NSBitmapImageRep imageRepWithData:imgData] CGImage];
+        [src release];
+        #else
         CGImageRef image = [[NSBitmapImageRep imageRepWithData:data] CGImage];
+        #endif
+        
         [fh release];
 
         if (!image) return READ_ERROR;
