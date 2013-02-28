@@ -91,4 +91,8 @@ pngquant_error rwpng_read_image24(FILE *infile, png24_image *mainprog_ptr);
 pngquant_error rwpng_write_image8(FILE *outfile, png8_image *mainprog_ptr);
 pngquant_error rwpng_write_image24(FILE *outfile, png24_image *mainprog_ptr);
 
+png_bytepp rwpng_create_row_pointers(png_infop info_ptr, png_structp png_ptr, unsigned char *base, unsigned int height, unsigned int rowbytes);
+void rwpng_write_end(png_infopp info_ptr_p, png_structpp png_ptr_p, png_bytepp row_pointers);
+void rwpng_set_gamma(png_infop info_ptr, png_structp png_ptr, double gamma);
+
 #endif

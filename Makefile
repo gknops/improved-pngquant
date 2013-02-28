@@ -20,7 +20,7 @@ CFLAGS += -std=c99 $(CFLAGSADD)
 LDFLAGS ?= -L$(CUSTOMLIBPNG) -L/usr/local/lib/ -L/usr/lib/ -L/usr/X11/lib/
 LDFLAGS += -lpng -lm $(LDFLAGSADD)
 
-OBJS = pngquant.o rwpng.o pam.o mediancut.o blur.o mempool.o viter.o nearest.o
+OBJS = pngquant.o rwpng.o pam.o palette.o mediancut.o blur.o mempool.o viter.o nearest.o
 COCOA_OBJS = rwpng_cocoa.o
 
 DISTFILES = $(OBJS:.o=.c) *.[hm] pngquant.1 Makefile README.md INSTALL CHANGELOG COPYRIGHT
