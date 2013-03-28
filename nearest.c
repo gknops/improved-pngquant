@@ -104,7 +104,7 @@ struct nearest_map *nearest_init(const colormap *map)
 
     const unsigned long mempool_size = sizeof(struct color_entry) * subset_palette->colors * map->colors/5 + (1<<14);
     mempool m = NULL;
-    struct nearest_map *centroids = mempool_new(&m, sizeof(*centroids), mempool_size);
+    struct nearest_map *centroids = mempool_new(&m, sizeof(*centroids), (unsigned int)mempool_size);
     centroids->mempool = m;
 
     unsigned int skipped=0;
@@ -112,7 +112,7 @@ struct nearest_map *nearest_init(const colormap *map)
 
 
     const unsigned int selected_heads = subset_palette->colors;
-    centroids->heads = mempool_new(&centroids->mempool, sizeof(centroids->heads[0])*(selected_heads+1), mempool_size); // +1 is fallback head
+    centroids->heads = mempool_new(&centroids->mempool, sizeof(centroids->heads[0])*(selected_heads+1), (unsigned int)mempool_size); // +1 is fallback head
 
     unsigned int h=0;
     for(; h < selected_heads; h++)

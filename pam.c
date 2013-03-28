@@ -172,7 +172,7 @@ struct acolorhash_table *pam_allocacolorhash(unsigned int maxcolors, unsigned in
 
     mempool m = NULL;
     unsigned long mempool_size = hash_size * sizeof(struct acolorhist_arr_head) + estimated_colors * sizeof(struct acolorhist_arr_item);
-    struct acolorhash_table *t = mempool_new(&m, sizeof(*t), mempool_size);
+    struct acolorhash_table *t = mempool_new(&m, sizeof(*t), (unsigned int)mempool_size);
     t->buckets = mempool_new(&m, hash_size * sizeof(struct acolorhist_arr_head), 0);
     t->mempool = m;
     t->hash_size = hash_size;
