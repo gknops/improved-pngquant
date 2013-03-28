@@ -3,36 +3,28 @@
 //  Pnm8bit
 //
 //  Created by Gerd Knops on 2/26/13.
-//  Copyright (c) 2013 BITart.com. All rights reserved.
+//  Copyright (c) 2013 BITart Consulting, Gerd Knops.
+// 
+// Permission to use, copy, modify, and distribute this software and its
+// documentation for any purpose and without fee is hereby granted, provided
+// that the above copyright notice appear in all copies and that both that
+// copyright notice and this permission notice appear in supporting
+// documentation.  This software is provided "as is" without express or
+// implied warranty.
 //
 #import "NSBitmapImageRep+PNG8Bit.h"
+/*:>Header
+#define USE_NSLOG
 
+#include "pngquant.h"
+
+*/
 
 @implementation NSBitmapImageRep (PNG8Bit)
 
-
-static void png8_error_handler(png_structp png_ptr, png_const_charp msg) {
-	
-	[NSException raise:@"libpng exception" format:@"error: %s",msg];
-}
-
-static void png8_user_write_data(
-	png_structp png_ptr,
-	png_bytep data,
-	png_size_t length
-)
-{
-	NSMutableData	*md=(NSMutableData *)png_get_io_ptr(png_ptr);
-	
-	[md appendBytes:(const void *)data length:(NSUInteger)length];
-}
-static void png8_user_flush_data(png_structp png_ptr) {
-}
-
-
-
-
-
+//*****************************************************************************
+// API
+//*****************************************************************************
 - (NSData *)png8data {
 	
 	return [self png8dataWithOptions:NULL];
@@ -50,6 +42,83 @@ static void png8_user_flush_data(png_structp png_ptr) {
 	
 	return data;
 }
+
+//:-H	Private section
+//*****************************************************************************
+// Callbacks
+//*****************************************************************************
+static void png8_error_handler(png_structp png_ptr, png_const_charp msg) {
+	
+	[NSException raise:@"libpng exception" format:@"error: %s",msg];
+}
+static void png8_user_write_data(
+	png_structp png_ptr,
+	png_bytep data,
+	png_size_t length
+)
+{
+	NSMutableData	*md=(NSMutableData *)png_get_io_ptr(png_ptr);
+	
+	[md appendBytes:(const void *)data length:(NSUInteger)length];
+}
+static void png8_user_flush_data(png_structp png_ptr) {
+}
+
+//*****************************************************************************
+// Implementation
+//*****************************************************************************
+- (int)png8_getPNG24Image:(png24_image *)out {
+	
+	CGImageRef		image=[self CGImage];
+	
+	if(!image) return READ_ERROR;
+	
+	png_uint_32		width=(png_uint_32)CGImageGetWidth(image);
+	png_uint_32 	height=(png_uint_32)CGImageGetHeight(image);
+	
+	rgb_pixel		*pixel_data=calloc(width*height,4);
+	CGColorSpaceRef	colorspace=CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+	CGContextRef	context=CGBitmapContextCreate(
+		pixel_data,
+		width,height,
+		8,width*4,
+		colorspace,
+		kCGImageAlphaPremultipliedLast
+	);
+	
+	if(!context) return READ_ERROR;
+	
+	CGContextDrawImage(context,CGRectMake(0.0,0.0,width,height),image);
+	CGContextRelease(context);
+	CGColorSpaceRelease(colorspace);
+	
+	// reverse premultiplication
+	for(int i=0; i<width*height; i++)
+	{
+		if(pixel_data[i].a)
+		{
+			pixel_data[i]=(rgb_pixel){
+				.a=pixel_data[i].a,
+				.r=pixel_data[i].r*255/pixel_data[i].a,
+				.g=pixel_data[i].g*255/pixel_data[i].a,
+				.b=pixel_data[i].b*255/pixel_data[i].a,
+			};
+		}
+	}
+	
+	out->gamma=0.45455;
+	out->width=width;
+	out->height=height;
+	out->rgba_data=(unsigned char *)pixel_data;
+	out->row_pointers=malloc(sizeof(out->row_pointers[0])*out->height);
+	
+	for(int i=0; i<out->height; i++)
+	{
+		out->row_pointers[i]=(unsigned char *)&pixel_data[width*i];
+	}
+	
+	return SUCCESS;
+}
 - (NSData *)_png8dataWithOptions:(PNGQuantOptions *)optionPtr {
 	
 	if(!optionPtr)
@@ -66,7 +135,6 @@ static void png8_user_flush_data(png_structp png_ptr) {
 		
 		optionPtr=&options;
 	}
-	
 	
 	pngquant_image input_image={}; // initializes all fields to 0
 	
@@ -105,41 +173,9 @@ static void png8_user_flush_data(png_structp png_ptr) {
 		return nil;
 	}
 	
-	// retval=write_image(&output_image,NULL,outname,optionPtr);
-		//     if (output_image) {
-		//         retval = rwpng_write_image8(outfile, output_image);
-		//     } else {
-		// 	
-		// 	
-		// pngquant_error rwpng_write_image8(FILE *outfile, png8_image *output_image)
-		// {
-	// png_structp png_ptr;
-	// png_infop info_ptr;
-	// 
-	// pngquant_error retval=rwpng_write_image_init((png_image *)mainprog_ptr,&png_ptr,&info_ptr,outfile);
-	// 
-	// if(retval){ return retval; }
-	
 	png_structp png_ptr=png_create_write_struct(PNG_LIBPNG_VER_STRING,&output_image,png8_error_handler,NULL);
-	
-	
-	
-	
-	// @@@@@ TODO: write to mutable data!!! Return data.
-	// pngquant_error retval = rwpng_write_image_init((png_image*)mainprog_ptr, &png_ptr, &info_ptr, outfile);
-	
-	
-	
-    // pngquant_error retval = rwpng_write_image_init((png_image*)mainprog_ptr, &png_ptr, &info_ptr, outfile);
-    // if (retval) return retval;
-    // 
-    // // Palette images generally don't gain anything from filtering
-    // png_set_filter(png_ptr, PNG_FILTER_TYPE_BASE, PNG_FILTER_VALUE_NONE);
-    // 
-    // rwpng_set_gamma(info_ptr, png_ptr, mainprog_ptr->gamma);
-	
-	
 	png_infop info_ptr=png_create_info_struct(png_ptr);
+	
 	if(!info_ptr)
 	{
 		png_destroy_write_struct(&png_ptr,NULL);
@@ -157,18 +193,8 @@ static void png8_user_flush_data(png_structp png_ptr) {
 		png8_user_flush_data
 	);
 	
-	
-	
-	
-	
-	
 	// Palette images generally don't gain anything from filtering
 	png_set_filter(png_ptr,PNG_FILTER_TYPE_BASE,PNG_FILTER_VALUE_NONE);
-	
-	
-	
-	
-	
 	
 	rwpng_set_gamma(info_ptr,png_ptr,output_image.gamma);
 	
@@ -204,79 +230,16 @@ static void png8_user_flush_data(png_structp png_ptr) {
 		png_set_tRNS(png_ptr,info_ptr,output_image.trans,output_image.num_trans,NULL);
 	}
 	
-	
 	png_bytepp row_pointers=rwpng_create_row_pointers(info_ptr,png_ptr,output_image.indexed_data,output_image.height,output_image.width);
 	
 	rwpng_write_end(&info_ptr,&png_ptr,row_pointers);
 	
 	free(row_pointers);
 	
-	// return SUCCESS;
-	// 
-	// @@@@@
-	
-	
-	
-	
-	
-	
 	pngquant_image_free(&input_image);
 	pngquant_output_image_free(&output_image);
 	
 	return data;
-}
-- (int)png8_getPNG24Image:(png24_image *)out {
-	
-	CGImageRef		image=[self CGImage];
-	
-	if(!image) return READ_ERROR;
-	
-	png_uint_32		width=(png_uint_32)CGImageGetWidth(image);
-	png_uint_32 	height=(png_uint_32)CGImageGetHeight(image);
-	
-	rgb_pixel		*pixel_data=calloc(width*height,4);
-	CGColorSpaceRef	colorspace=CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-	CGContextRef	context=CGBitmapContextCreate(
-		pixel_data,
-		width,height,
-		8,width*4,
-		colorspace,
-		kCGImageAlphaPremultipliedLast
-	);
-	
-	if(!context) return READ_ERROR;
-	
-	CGContextDrawImage(context,CGRectMake(0.0,0.0,width,height),image);
-	CGContextRelease(context);
-	CGColorSpaceRelease(colorspace);
-	
-	// reverse premultiplication
-	
-	for(int i=0; i<width*height; i++)
-	{
-		if(pixel_data[i].a)
-		{
-			pixel_data[i]=(rgb_pixel){
-				.a=pixel_data[i].a,
-				.r=pixel_data[i].r*255/pixel_data[i].a,
-				.g=pixel_data[i].g*255/pixel_data[i].a,
-				.b=pixel_data[i].b*255/pixel_data[i].a,
-			};
-		}
-	}
-	
-	out->gamma=0.45455;
-	out->width=width;
-	out->height=height;
-	out->rgba_data=(unsigned char *)pixel_data;
-	out->row_pointers=malloc(sizeof(out->row_pointers[0])*out->height);
-	
-	for(int i=0; i<out->height; i++)
-	{
-		out->row_pointers[i]=(unsigned char *)&pixel_data[width*i];
-	}
-	
-	return SUCCESS;
 }
 
 
