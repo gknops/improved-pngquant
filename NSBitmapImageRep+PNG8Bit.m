@@ -20,6 +20,8 @@
 
 */
 
+#define	ERRLog(format,...) NSLog(@"%s:%d: ERROR: "format,__FILE__,__LINE__,##__VA_ARGS__);
+
 @implementation NSBitmapImageRep (PNG8Bit)
 
 //*****************************************************************************
