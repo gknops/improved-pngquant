@@ -18,7 +18,8 @@ CFLAGS ?= -Wall -Wno-unknown-pragmas -I. -I$(CUSTOMLIBPNG) -I/usr/local/include/
 CFLAGS += -std=c99 $(CFLAGSADD)
 
 LDFLAGS ?= -L$(CUSTOMLIBPNG) -L/usr/local/lib/ -L/usr/lib/ -L/usr/X11/lib/
-LDFLAGS += -lpng -lm $(LDFLAGSADD)
+# LDFLAGS += -lpng -lm $(LDFLAGSADD)
+LDFLAGS += -lm $(LDFLAGSADD) -lz ../libpng/libpng15.a
 
 OBJS = pngquant.o rwpng.o pam.o palette.o mediancut.o blur.o mempool.o viter.o nearest.o
 COCOA_OBJS = rwpng_cocoa.o
